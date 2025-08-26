@@ -4,11 +4,12 @@ import dotenv from 'dotenv';
 import fastifyFormBody from '@fastify/formbody';
 import fastifyWs from '@fastify/websocket';
 import mulaw from 'mulaw-js';
-const { ulaw2linear, linear2ulaw } = mulaw;
+const { ulaw2linearSample, linear2ulawSample } = mulaw;
 
 // Load environment variables from .env file
 dotenv.config();
 
+// PCM16 → MuLaw
 function pcm16ToMulaw(pcm16Buffer) {
   const samples = new Int16Array(
     pcm16Buffer.buffer,
@@ -17,16 +18,17 @@ function pcm16ToMulaw(pcm16Buffer) {
   );
   const muLawSamples = new Uint8Array(samples.length);
   for (let i = 0; i < samples.length; i++) {
-    muLawSamples[i] = linear2ulaw(samples[i]); // usa direttamente la funzione importata
+    muLawSamples[i] = linear2ulawSample(samples[i]); // ✅ funzione corretta
   }
   return Buffer.from(muLawSamples).toString('base64');
 }
 
+// MuLaw → PCM16
 function mulawToPcm16(muLawBufferB64) {
   const muLawBuffer = Buffer.from(muLawBufferB64, 'base64');
   const pcm16 = new Int16Array(muLawBuffer.length);
   for (let i = 0; i < muLawBuffer.length; i++) {
-    pcm16[i] = ulaw2linear(muLawBuffer[i]); // usa direttamente la funzione importata
+    pcm16[i] = ulaw2linearSample(muLawBuffer[i]); // ✅ funzione corretta
   }
   return Buffer.from(pcm16.buffer).toString('base64');
 }
