@@ -3,16 +3,20 @@ import WebSocket from 'ws';
 import dotenv from 'dotenv';
 import fastifyFormBody from '@fastify/formbody';
 import fastifyWs from '@fastify/websocket';
-import * as mulaw from 'mulaw-js';
+import { ulaw2linear, linear2ulaw } from 'mulaw-js';
 
 // Load environment variables from .env file
 dotenv.config();
 
 function pcm16ToMulaw(pcm16Buffer) {
-  const samples = new Int16Array(pcm16Buffer.buffer, pcm16Buffer.byteOffset, pcm16Buffer.length / 2);
+  const samples = new Int16Array(
+    pcm16Buffer.buffer,
+    pcm16Buffer.byteOffset,
+    pcm16Buffer.length / 2
+  );
   const muLawSamples = new Uint8Array(samples.length);
   for (let i = 0; i < samples.length; i++) {
-    muLawSamples[i] = mulaw.linear2ulaw(samples[i]);
+    muLawSamples[i] = linear2ulaw(samples[i]); // usa direttamente la funzione importata
   }
   return Buffer.from(muLawSamples).toString('base64');
 }
@@ -21,7 +25,7 @@ function mulawToPcm16(muLawBufferB64) {
   const muLawBuffer = Buffer.from(muLawBufferB64, 'base64');
   const pcm16 = new Int16Array(muLawBuffer.length);
   for (let i = 0; i < muLawBuffer.length; i++) {
-    pcm16[i] = mulaw.ulaw2linear(muLawBuffer[i]);
+    pcm16[i] = ulaw2linear(muLawBuffer[i]); // usa direttamente la funzione importata
   }
   return Buffer.from(pcm16.buffer).toString('base64');
 }
