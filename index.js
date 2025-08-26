@@ -18,7 +18,7 @@ function pcm16ToMulaw(pcm16Buffer) {
   );
   const muLawSamples = new Uint8Array(samples.length);
   for (let i = 0; i < samples.length; i++) {
-    muLawSamples[i] = linear2ulawSample(samples[i]); // ✅ funzione corretta
+    muLawSamples[i] = linear2ulawSample(samples[i]); 
   }
   return Buffer.from(muLawSamples).toString('base64');
 }
@@ -28,7 +28,7 @@ function mulawToPcm16(muLawBufferB64) {
   const muLawBuffer = Buffer.from(muLawBufferB64, 'base64');
   const pcm16 = new Int16Array(muLawBuffer.length);
   for (let i = 0; i < muLawBuffer.length; i++) {
-    pcm16[i] = ulaw2linearSample(muLawBuffer[i]); // ✅ funzione corretta
+    pcm16[i] = ulaw2linearSample(muLawBuffer[i]); 
   }
   return Buffer.from(pcm16.buffer).toString('base64');
 }
