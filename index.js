@@ -86,8 +86,8 @@ fastify.register(async (fastify) => {
                 type: 'session.update',
                 session: {
                     turn_detection: { type: 'server_vad' },
-                    input_audio_format: 'g711_ulaw',
-                    output_audio_format: 'g711_ulaw',
+                    input_audio_format: 'pcm16',
+                    output_audio_format: 'pcm16',
                     voice: VOICE,
                     instructions: "Sei un assistente di un ristorante. Parla sempre in ITALIANO, rispondi in modo gentile e conciso.",
                     modalities: ["text", "audio"],
