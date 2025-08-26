@@ -3,7 +3,8 @@ import WebSocket from 'ws';
 import dotenv from 'dotenv';
 import fastifyFormBody from '@fastify/formbody';
 import fastifyWs from '@fastify/websocket';
-import { ulaw2linear, linear2ulaw } from 'mulaw-js';
+import mulaw from 'mulaw-js';
+const { ulaw2linear, linear2ulaw } = mulaw;
 
 // Load environment variables from .env file
 dotenv.config();
