@@ -85,9 +85,9 @@ fastify.register(async (fastify) => {
             const sessionUpdate = {
               type: 'session.update',
               session: {
-                turn_detection: { type: 'server_vad' },
-                input_audio_format: { type: 'g711_ulaw', sample_rate_hz: 8000 },
-                output_audio_format: { type: 'g711_ulaw', sample_rate_hz: 8000 },
+                turn_detection: { type: 'server_vad', create_response: true }, // fai generare la risposta automaticamente
+                input_audio_format: 'g711_ulaw',    // <— stringa, non oggetto
+                output_audio_format: 'g711_ulaw',   // <— stringa, non oggetto
                 voice: VOICE,
                 instructions: "Sei un assistente di un ristorante. Parla sempre in ITALIANO, rispondi in modo gentile e conciso.",
                 modalities: ["text", "audio"],
