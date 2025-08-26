@@ -89,7 +89,8 @@ fastify.register(async (fastify) => {
                     input_audio_format: 'g711_ulaw',
                     output_audio_format: 'g711_ulaw',
                     voice: VOICE,
-                    instructions: SYSTEM_MESSAGE,
+                    language: "it-IT",
+                    instructions: "Sei un assistente di un ristorante italiano. Rispondi SEMPRE in italiano in modo gentile e conciso.",
                     modalities: ["text", "audio"],
                     temperature: 0.8,
                 }
