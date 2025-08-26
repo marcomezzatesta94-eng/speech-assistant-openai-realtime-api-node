@@ -83,16 +83,16 @@ fastify.register(async (fastify) => {
         // Control initial session with OpenAI
         const initializeSession = () => {
             const sessionUpdate = {
-                type: 'session.update',
-                session: {
-                    turn_detection: { type: 'server_vad' },
-                    input_audio_format: 'g711_ulaw',
-                    output_audio_format: 'g711_ulaw',
-                    voice: VOICE,
-                    instructions: "Sei un assistente di un ristorante. Parla sempre in ITALIANO, rispondi in modo gentile e conciso.",
-                    modalities: ["text", "audio"],
-                    temperature: 0.8,
-                }
+              type: 'session.update',
+              session: {
+                turn_detection: { type: 'server_vad' },
+                input_audio_format: { type: 'g711_ulaw', sample_rate_hz: 8000 },
+                output_audio_format: { type: 'g711_ulaw', sample_rate_hz: 8000 },
+                voice: VOICE,
+                instructions: "Sei un assistente di un ristorante. Parla sempre in ITALIANO, rispondi in modo gentile e conciso.",
+                modalities: ["text", "audio"],
+                temperature: 0.8,
+              }
             };
 
             console.log('Sending session update:', JSON.stringify(sessionUpdate));
@@ -175,6 +175,17 @@ fastify.register(async (fastify) => {
         openAiWs.on('message', (data) => {
             try {
                 const response = JSON.parse(data);
+                // <<< AGGIUNGI SUBITO DOPO JSON.parse >>>
+                if (response.type === 'response.done' && response.response?.status === 'failed') {
+                  console.error(
+                    'OpenAI response failed:',
+                    JSON.stringify(response.response.status_details, null, 2)
+                  );
+                }
+                if (response.type === 'error') {
+                  console.error('OpenAI error event:', JSON.stringify(response, null, 2));
+                }
+                // <<< FINE BLOCCO >>>
 
                 if (LOG_EVENT_TYPES.includes(response.type)) {
                     console.log(`Received event: ${response.type}`, response);
@@ -224,7 +235,7 @@ fastify.register(async (fastify) => {
                         break;
                     case 'start':
                         streamSid = data.start.streamSid;
-                        console.log('Incoming stream has started', streamSid);
+                        console.log('Incoming stream has started', streamSid, 'mediaFormat:', data.start?.mediaFormat);
 
                         // Reset start and media timestamp on a new stream
                         responseStartTimestampTwilio = null; 
