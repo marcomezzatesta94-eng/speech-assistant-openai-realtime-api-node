@@ -3,32 +3,9 @@ import WebSocket from 'ws';
 import dotenv from 'dotenv';
 import fastifyFormBody from '@fastify/formbody';
 import fastifyWs from '@fastify/websocket';
-import mulaw from 'mulaw-js';
 
 // Load environment variables from .env file
 dotenv.config();
-
-function pcm16ToMulaw(pcm16Buffer) {
-  const samples = new Int16Array(
-    pcm16Buffer.buffer,
-    pcm16Buffer.byteOffset,
-    pcm16Buffer.length / 2
-  );
-  const muLawSamples = new Uint8Array(samples.length);
-  for (let i = 0; i < samples.length; i++) {
-    muLawSamples[i] = mulaw.linear2ulawSample(samples[i]); //
-  }
-  return Buffer.from(muLawSamples).toString('base64');
-}
-
-function mulawToPcm16(muLawBufferB64) {
-  const muLawBuffer = Buffer.from(muLawBufferB64, 'base64');
-  const pcm16 = new Int16Array(muLawBuffer.length);
-  for (let i = 0; i < muLawBuffer.length; i++) {
-    pcm16[i] = mulaw.ulaw2linearSample(muLawBuffer[i]); //
-  }
-  return Buffer.from(pcm16.buffer).toString('base64');
-}
 
 // Retrieve the OpenAI API key from environment variables.
 const { OPENAI_API_KEY } = process.env;
@@ -109,8 +86,8 @@ fastify.register(async (fastify) => {
                 type: 'session.update',
                 session: {
                     turn_detection: { type: 'server_vad' },
-                    input_audio_format: 'pcm16',
-                    output_audio_format: 'pcm16',
+                    input_audio_format: 'g711_ulaw',
+                    output_audio_format: 'g711_ulaw',
                     voice: VOICE,
                     instructions: "Sei un assistente di un ristorante. Parla sempre in ITALIANO, rispondi in modo gentile e conciso.",
                     modalities: ["text", "audio"],
@@ -204,26 +181,21 @@ fastify.register(async (fastify) => {
                 }
 
                 if (response.type === 'response.audio.delta' && response.delta) {
-                    const muLawB64 = pcm16ToMulaw(Buffer.from(response.delta, 'base64'));
-                    const audioDelta = {
-                        event: 'media',
-                        streamSid: streamSid,
-                        media: { payload: muLawB64 }
-                    };
-                    connection.send(JSON.stringify(audioDelta));
-
-                    // First delta from a new response starts the elapsed time counter
-                    if (!responseStartTimestampTwilio) {
-                        responseStartTimestampTwilio = latestMediaTimestamp;
-                        if (SHOW_TIMING_MATH) console.log(`Setting start timestamp for new response: ${responseStartTimestampTwilio}ms`);
-                    }
-
-                    if (response.item_id) {
-                        lastAssistantItem = response.item_id;
-                    }
-                    
-                    sendMark(connection, streamSid);
+                const audioDelta = {
+                  event: 'media',
+                  streamSid: streamSid,
+                  media: { payload: response.delta } // già g711_ulaw base64
+                };
+                connection.send(JSON.stringify(audioDelta));
+              
+                if (!responseStartTimestampTwilio) {
+                  responseStartTimestampTwilio = latestMediaTimestamp;
                 }
+                if (response.item_id) {
+                  lastAssistantItem = response.item_id;
+                }
+                sendMark(connection, streamSid);
+              }
 
                 if (response.type === 'input_audio_buffer.speech_started') {
                     handleSpeechStartedEvent();
@@ -243,12 +215,11 @@ fastify.register(async (fastify) => {
                         latestMediaTimestamp = data.media.timestamp;
                         if (SHOW_TIMING_MATH) console.log(`Received media message with timestamp: ${latestMediaTimestamp}ms`);
                         if (openAiWs.readyState === WebSocket.OPEN) {
-                            const pcmAudioB64 = mulawToPcm16(data.media.payload);
                             const audioAppend = {
-                                type: 'input_audio_buffer.append',
-                                audio: pcmAudioB64
-                            };
-                            openAiWs.send(JSON.stringify(audioAppend));
+                          type: 'input_audio_buffer.append',
+                          audio: data.media.payload // già g711_ulaw base64 da Twilio
+                        };
+                        openAiWs.send(JSON.stringify(audioAppend));
                         }
                         break;
                     case 'start':
